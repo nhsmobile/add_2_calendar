@@ -64,6 +64,7 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
                 event.location = location
                 event.notes = description
                 event.isAllDay = allDay
+                event.calendar = eventStore.defaultCalendarForNewEvents
                 
                 if let recurrence = args["recurrence"] as? [String:Any]{
                     let interval = recurrence["interval"] as! Int
@@ -97,18 +98,32 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
         switch authStatus {
         case .authorized:
             OperationQueue.main.addOperation {
-                self.presentEventCalendarDetailModal(event: event, eventStore: eventStore)
+//                self.presentEventCalendarDetailModal(event: event, eventStore: eventStore)
+                do {
+                    try eventStore.save(event, span: .thisEvent)
+                    completion?(true)
+                } catch let error as NSError {
+                    print("failed to save event with error : \(error.localizedDescription)")
+                    completion?(false)
+                }
             }
-            completion?(true)
+//            completion?(true)
         case .notDetermined:
             //Auth is not determined
             //We should request access to the calendar
-            eventStore.requestAccess(to: .event, completion: { [weak self] (granted, error) in
+            eventStore.requestAccess(to: .event, completion: { (granted, error) in
                 if granted {
                     OperationQueue.main.addOperation {
-                        self?.presentEventCalendarDetailModal(event: event, eventStore: eventStore)
+//                        self?.presentEventCalendarDetailModal(event: event, eventStore: eventStore)
+                        do {
+                            try eventStore.save(event, span: .thisEvent)
+                            completion?(true)
+                        } catch let error as NSError {
+                            print("failed to save event with error : \(error.localizedDescription)")
+                            completion?(false)
+                        }
                     }
-                    completion?(true)
+//                    completion?(true)
                 } else {
                     // Auth denied
                     completion?(false)
@@ -117,6 +132,8 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
         case .denied, .restricted:
             // Auth denied or restricted
             completion?(false)
+        @unknown default:
+            fatalError()
         }
     }
     
@@ -135,7 +152,7 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
         if let root = UIApplication.shared.keyWindow?.rootViewController {
             root.present(eventModalVC, animated: true, completion: {
                 statusBarStyle = UIApplication.shared.statusBarStyle
-                UIApplication.shared.statusBarStyle = UIStatusBarStyle.default
+//                UIApplication.shared.statusBarStyle = UIStatusBarStyle.default
             })
         }
     }
@@ -145,7 +162,7 @@ extension SwiftAdd2CalendarPlugin: EKEventEditViewDelegate {
     
     public func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
         controller.dismiss(animated: true, completion: {
-            UIApplication.shared.statusBarStyle = statusBarStyle
+//            UIApplication.shared.statusBarStyle = statusBarStyle
         })
     }
 }
