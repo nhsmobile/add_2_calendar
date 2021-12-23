@@ -65,6 +65,7 @@ public class SwiftAdd2CalendarPlugin: NSObject, FlutterPlugin {
                 event.notes = description
                 event.isAllDay = allDay
                 event.calendar = eventStore.defaultCalendarForNewEvents
+                event.addAlarm(EKAlarm(relativeOffset: 0))
                 
                 if let recurrence = args["recurrence"] as? [String:Any]{
                     let interval = recurrence["interval"] as! Int
